@@ -13,7 +13,11 @@
     "deploy": "gh-pages -d dist"
   },
   "dependencies": {
+    "@react-three/drei": "^10.0.7",
     "@react-three/fiber": "^9.1.2",
+    "d3-force": "^3.0.0",
+    "gh-pages": "^6.3.0",
+    "r3f-forcegraph": "^1.0.8",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
     "relation-graph-react": "^2.2.11",
