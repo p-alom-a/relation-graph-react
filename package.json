@@ -21,7 +21,8 @@
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
     "relation-graph-react": "^2.2.11",
-    "three": "^0.176.0"
+    "three": "^0.176.0",
+    "three-spritetext": "^1.9.6"
   },
   "devDependencies": {
     "@eslint/js": "^9.25.0",
