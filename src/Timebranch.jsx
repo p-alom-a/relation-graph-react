@@ -5,39 +5,11 @@ import * as THREE from 'three';
 import { useControls } from 'leva';
 import './App.css';
 import { taxonomyData, taxonomyGroups, phylogeneticRelations } from './data/taxonomyData';
+import { createStructure, applyRepulsion } from './utils/treeStructure.jsx';
 
 function getTaxonColor(name) {
   const group = taxonomyData[name]?.group || "other_eukaryotes";
   return taxonomyGroups[group];
-}
-
-// Fonction de répulsion optimisée (appelée une seule fois)
-function applyRepulsion(nodes, repulsionStrength = 1, minDistance = 1.8) {
-  const nodesCopy = [...nodes];
-  
-  for (let i = 0; i < nodesCopy.length; i++) {
-    for (let j = i + 1; j < nodesCopy.length; j++) {
-      const node1 = nodesCopy[i];
-      const node2 = nodesCopy[j];
-      
-      const distance = node1.position.distanceTo(node2.position);
-      
-      if (distance < minDistance && distance > 0) {
-        const repulsionVector = new THREE.Vector3()
-          .subVectors(node1.position, node2.position)
-          .normalize()
-          .multiplyScalar((minDistance - distance) * repulsionStrength);
-        
-        // Appliquer la répulsion seulement sur les axes X et Z pour maintenir la hiérarchie temporelle en Y
-        node1.position.x += repulsionVector.x;
-        node1.position.z += repulsionVector.z;
-        node2.position.x -= repulsionVector.x;
-        node2.position.z -= repulsionVector.z;
-      }
-    }
-  }
-  
-  return nodesCopy;
 }
 
 // Composant pour un nœud de taxon avec info-bulle
@@ -104,136 +76,6 @@ function PhyloBranch({ start, end, color = 'white', thickness = 0.05 }) {
   );
 }
 
-// Fonction pour calculer les positions 3D basées sur la période avec longueurs temporelles
-function calculateNodePositions() {
-  const nodePositions = {};
-  const nodes = [];
-  const branches = [];
-  
-  // Coefficient de lissage pour la conversion temps -> distance
-  const timeToDistanceCoeff = 0.008; // Ajustable selon les besoins visuels
-  const minBranchLength = 0.5; // Longueur minimale pour éviter les branches trop courtes
-  const maxBranchLength = 8; // Longueur maximale pour éviter les branches trop longues
-
-  const createBranch = (species, parentPosition, parentPeriod, angle = 0, baseRadius = 2.5, depth = 0, maxDepth = 6) => {
-    if (depth > maxDepth) return;
-
-    // Gérer les noms spéciaux qui n'ont pas de données taxonomiques
-    let period, group;
-    if (species === "Protozoa_grouping") {
-      period = 1800;
-      group = "protozoa";
-    } else if (species === "Agnathes_Gnathostomes") {
-      period = 500;
-      group = "animals";
-    } else if (!taxonomyData[species]) {
-      return;
-    } else {
-      period = taxonomyData[species].period;
-      group = taxonomyData[species].group;
-    }
-
-    // CORRECTION: Vérifier la cohérence temporelle (enfant doit être plus récent que parent)
-    if (period >= parentPeriod) {
-      console.warn(`Incohérence temporelle détectée: ${species} (${period} Ma) n'est pas plus récent que son parent (${parentPeriod} Ma)`);
-      // Correction automatique: forcer l'enfant à être plus récent
-      period = parentPeriod - 10;
-    }
-
-    // CORRECTION: Calculer la différence temporelle correctement (SANS valeur absolue)
-    const timeDifference = parentPeriod - period;
-    
-    // Vérification de sécurité
-    if (timeDifference <= 0) {
-      console.warn(`Différence temporelle invalide pour ${species}: ${timeDifference} Ma`);
-      return;
-    }
-
-    let branchLength = timeDifference * timeToDistanceCoeff;
-    
-    // Appliquer les limites min/max avec lissage
-    branchLength = Math.max(minBranchLength, Math.min(maxBranchLength, branchLength));
-    
-    // Lissage logarithmique pour les très grandes différences temporelles
-    if (timeDifference > 1000) {
-      branchLength = minBranchLength + Math.log(timeDifference / 1000) * 1.5;
-    }
-
-    // Calculer la position du nœud enfant
-    const rad = THREE.MathUtils.degToRad(angle);
-    const spiralFactor = depth * 0.15;
-    
-    const childX = parentPosition.x + (baseRadius * Math.cos(rad + spiralFactor));
-    const childZ = parentPosition.z + (baseRadius * Math.sin(rad + spiralFactor));
-    
-    // Position Y basée sur la longueur temporelle de la branche
-    // CORRECTION: La direction est déjà correcte (+ vers le futur)
-    const childY = parentPosition.y + branchLength;
-
-    const childPosition = new THREE.Vector3(childX, childY, childZ);
-    
-    nodes.push({
-      name: species,
-      position: childPosition.clone(),
-      depth: depth,
-      period: period,
-      parentPeriod: parentPeriod,
-      timeDifference: timeDifference
-    });
-
-    nodePositions[species] = childPosition.clone();
-    
-    // Créer la branche entre parent et enfant
-    branches.push({
-      start: parentPosition.clone(),
-      end: childPosition.clone(),
-      parentSpecies: "parent", // On pourrait passer le nom du parent
-      childSpecies: species,
-      color: getTaxonColor(species),
-      length: branchLength,
-      timeDifference: timeDifference,
-      parentPeriod: parentPeriod,
-      childPeriod: period
-    });
-
-    const children = phylogeneticRelations[species];
-    if (!children || children.length === 0) return;
-
-    // Rayon adaptatif basé sur la profondeur et le nombre d'enfants
-    const childRadius = baseRadius * Math.pow(0.8, depth) * Math.sqrt(children.length);
-    const angleStep = 360 / children.length;
-    
-    children.forEach((child, i) => {
-      const childAngle = angle + (i - (children.length - 1) / 2) * angleStep;
-      createBranch(child, childPosition, period, childAngle, childRadius, depth + 1, maxDepth);
-    });
-  };
-
-  // Commencer par LUCA à l'origine
-  const lucaPosition = new THREE.Vector3(0, -12, 0);
-  const lucaPeriod = taxonomyData["LUCA"].period;
-  
-  nodes.push({
-    name: "LUCA",
-    position: lucaPosition.clone(),
-    depth: 0,
-    period: lucaPeriod
-  });
-  
-  nodePositions["LUCA"] = lucaPosition.clone();
-
-  // Créer les branches pour les enfants de LUCA
-  const lucaChildren = phylogeneticRelations["LUCA"];
-  const angleStep = 120; // 360/3 pour les 3 domaines principaux
-  
-  lucaChildren.forEach((child, i) => {
-    const childAngle = i * angleStep;
-    createBranch(child, lucaPosition, lucaPeriod, childAngle, 3, 1);
-  });
-
-  return { nodes, branches };
-}
-
 // Info-bulle flottante améliorée
 function InfoTooltip({ info, position }) {
   if (!info) return null;
@@ -283,7 +125,16 @@ function InfoTooltip({ info, position }) {
 // Arbre phylogénétique amélioré
 const PhylogeneticTree = ({ onNodeHover, onNodeUnhover }) => {
   const { branches, nodes } = useMemo(() => {
-    const { nodes: initialNodes, branches: initialBranches } = calculateNodePositions();
+    const { nodes: initialNodes, branches: initialBranches } = createStructure(
+      "LUCA",
+      { x: 0, y: -10, z: 0 },
+      0,
+      3,
+      0,
+      taxonomyData,
+      phylogeneticRelations,
+      getTaxonColor
+    );
     
     // Appliquer la répulsion une seule fois pour optimiser
     const repulsedNodes = applyRepulsion(initialNodes, 0.4, 2.0);
