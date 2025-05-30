@@ -6,8 +6,141 @@ html, body {
   overflow: hidden;
 }
 
-canvas{
-    width: 100vw;
-height: 100vh;
+.app-container {
+  width: 100vw;
+  height: 100vh;
+  background: #0a0a2e;
+  position: relative;
+}
+
+.canvas-container {
+  width: 100%;
+  height: 100%;
+}
+
+/* Info-bulle */
+.info-tooltip {
+  position: absolute;
+  background: rgba(0, 0, 0, 0.9);
+  color: white;
+  padding: 12px;
+  border-radius: 8px;
+  max-width: 400px;
+  font-size: 13px;
+  z-index: 1000;
+  pointer-events: none;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+}
+
+.info-tooltip-title {
+  font-weight: bold;
+  margin-bottom: 8px;
+  font-size: 14px;
+}
+
+.info-tooltip-period {
+  margin-bottom: 6px;
+  color: #FFD700;
+}
+
+.info-tooltip-description {
+  line-height: 1.4;
+}
+
+/* Légende des couleurs */
+.color-legend {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  background: rgba(0, 0, 0, 0.8);
+  padding: 15px;
+  border-radius: 8px;
+  font-size: 12px;
+  color: white;
+  z-index: 1000;
+  max-width: 200px;
+}
+
+.color-legend-title {
+  font-weight: bold;
+  margin-bottom: 10px;
+  font-size: 14px;
+}
+
+.color-legend-item {
+  display: flex;
+  align-items: center;
+  margin-bottom: 5px;
+}
+
+.color-legend-dot {
+  width: 12px;
+  height: 12px;
+  margin-right: 8px;
+  border-radius: 50%;
+}
+
+/* Notes taxonomiques */
+.taxonomy-notes {
+  position: absolute;
+  bottom: 20px;
+  left: 20px;
+  background: rgba(0, 0, 0, 0.8);
+  padding: 12px;
+  border-radius: 8px;
+  font-size: 11px;
+  color: white;
+  max-width: 300px;
+}
+
+.taxonomy-notes-title {
+  font-weight: bold;
+  margin-bottom: 8px;
+}
+
+.taxonomy-notes-content {
+  line-height: 1.4;
+}
+
+/* Styles pour les nœuds de l'arbre phylogénétique */
+.taxon-node {
+  position: relative;
+}
+
+.taxon-node-sphere {
+  width: 0.15em;
+  height: 0.15em;
+  border-radius: 50%;
+}
+
+.taxon-node-text {
+  position: absolute;
+  top: 0.3em;
+  left: 50%;
+  transform: translateX(-50%);
+  color: white;
+  font-size: 0.2em;
+  text-align: center;
+  white-space: nowrap;
+}
+
+/* Styles pour les branches de l'arbre */
+.phylo-branch {
+  position: relative;
+}
+
+.phylo-branch-line {
+  position: absolute;
+  background-color: white;
+  transform-origin: 0 0;
+}
+
+.taxonomy-notes-item:last-child {
+  margin-bottom: 0;
+}
+
+.taxonomy-notes-italic {
+  font-style: italic;
+  font-size: 11px;
 }
 
