@@ -3,7 +3,7 @@ import { Canvas, useFrame } from '@react-three/fiber';
 import { OrbitControls, Text, Center, Line } from '@react-three/drei';
 import * as THREE from 'three';
 import { useControls } from 'leva';
-import './App.css';
+
 import { taxonomyData, taxonomyGroups, phylogeneticRelations } from './data/taxonomyData';
 import { createStructure, applyRepulsion } from './utils/treeStructure.jsx';
 
