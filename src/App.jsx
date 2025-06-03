@@ -90,7 +90,7 @@ export default function App() {
       </Canvas>
 
       <ColorLegend />
-      <TaxonomyNotes />
+      {/* <TaxonomyNotes /> */}
 
       <InfoTooltip
         info={hoveredInfo}
